@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" href="https://cdn-icons-png.flaticon.com/512/11861/11861955.png" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSLForge - OpenSSL Certificate Generator</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+            --success-hover: #16a34a;
+            --comment: #10b981;
+        }
+
+        [data-theme="light"] {
+            --background: #ffffff;
+            --surface: #f1f5f9;
+            --text: #0f172a;
+            --text-secondary: #64748b;
+            --border: #cbd5e1;
+            --comment: #059669;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: var(--surface);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .theme-toggle {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary-hover);
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text);
+            transition: border-color 0.3s;
+            font-size: 1rem;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .validity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin: 2rem 0 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 1.5rem 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .output {
+            position: relative;
+            background: var(--background);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            border: 1px solid var(--border);
+            line-height: 1.7;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 0.8rem;
+        }
+
+        .copy-btn:hover {
+            background: var(--success-hover);
+        }
+
+        #generate-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 1rem;
+        }
+
+        #generate-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .comment {
+            color: var(--comment) !important;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+            
+            .validity-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <div class="container">
+        <div class="header">
+            <h1>SSLForge✨ OpenSSL Cert Generator🔐</h1>
+            <button class="theme-toggle" onclick="toggleTheme()">🌓 Toggle Theme</button>
+        </div>
+
+        <div class="input-group">
+            <label for="domain">Domain Name</label>
+            <input type="text" id="domain" placeholder="example.com">
+        </div>
+
+        <div class="validity-grid">
+            <div class="input-group">
+                <label for="rootca-validity">Root CA Validity</label>
+                <select id="rootca-validity">
+                    <option value="10">10 Years</option>
+                    <option value="5">5 Years</option>
+                    <option value="3">3 Years</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="intermediate-validity">Intermediate CA Validity</label>
+                <select id="intermediate-validity">
+                    <option value="5">5 Years</option>
+                    <option value="3">3 Years</option>
+                    <option value="2">2 Years</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="wildcard-validity">Wildcard Validity</label>
+                <select id="wildcard-validity">
+                    <option value="1">1 Year</option>
+                    <option value="2">2 Years</option>
+                    <option value="3">3 Years</option>
+                </select>
+            </div>
+        </div>
+
+        <button id="generate-btn">⚡⚙️⚡</button>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="rootca">Root CA</button>
+            <button class="tab-btn" data-tab="intermediate">Intermediate</button>
+            <button class="tab-btn" data-tab="wildcard">Wildcard</button>
+            <button class="tab-btn" data-tab="fullchain">Full Chain</button>
+        </div>
+
+        <div id="rootca" class="tab-content active">
+            <div class="output" id="rootca-output"></div>
+            <button class="copy-btn" data-target="rootca-output">Copy</button>
+        </div>
+
+        <div id="intermediate" class="tab-content">
+            <div class="output" id="intermediate-output"></div>
+            <button class="copy-btn" data-target="intermediate-output">Copy</button>
+        </div>
+
+        <div id="wildcard" class="tab-content">
+            <div class="output" id="wildcard-output"></div>
+            <button class="copy-btn" data-target="wildcard-output">Copy</button>
+        </div>
+
+        <div id="fullchain" class="tab-content">
+            <div class="output" id="fullchain-output"></div>
+            <button class="copy-btn" data-target="fullchain-output">Copy</button>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const body = document.body;
+            const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.body.setAttribute('data-theme', savedTheme);
+
+        // Tab Navigation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn, .tab-content').forEach(el => {
+                    el.classList.remove('active');
+                });
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Copy Functionality
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const output = document.getElementById(btn.dataset.target);
+                navigator.clipboard.writeText(output.textContent);
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        });
+
+        // Generate Commands
+        document.getElementById('generate-btn').addEventListener('click', () => {
+            const domain = document.getElementById('domain').value.trim();
+            if (!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(domain)) {
+                alert('Please enter a valid domain (e.g., example.com)');
+                return;
+            }
+
+            const rootYears = parseInt(document.getElementById('rootca-validity').value);
+            const intermediateYears = parseInt(document.getElementById('intermediate-validity').value);
+            const wildcardYears = parseInt(document.getElementById('wildcard-validity').value);
+
+            generateCommands(domain, rootYears, intermediateYears, wildcardYears);
+        });
+
+        function generateCommands(domain, rootYears, intermediateYears, wildcardYears) {
+            const highlightComments = (text) => {
+                return text.split('\n').map(line => {
+                    const escaped = line.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    return line.startsWith('#') 
+                        ? `<span class="comment">${escaped}</span>` 
+                        : escaped;
+                }).join('\n');
+            };
+
+            const rootDays = rootYears * 365;
+            const intermediateDays = intermediateYears * 365;
+            const wildcardDays = wildcardYears * 365;
+            const wildcardDomain = `*.${domain}`;
+
+            // Configurations
+            const rootCAConfig = `[req]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_ca
+prompt = no
+
+[req_distinguished_name]
+CN = ${domain} Root CA
+O = ${domain} Organization
+C = US
+
+[v3_ca]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:TRUE
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign`;
+
+            const intermediateCAConfig = `[req]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_ca
+prompt = no
+
+[req_distinguished_name]
+CN = ${domain} Intermediate CA
+O = ${domain} Organization
+C = US
+
+[v3_ca]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:TRUE, pathlen:0
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign`;
+
+            const wildcardConfig = `[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+CN = ${wildcardDomain}
+O = ${domain} Organization
+C = US
+
+[v3_req]
+subjectAltName = DNS:${wildcardDomain}, DNS:${domain}
+keyUsage = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+basicConstraints = CA:FALSE`;
+
+            // Generate outputs with highlighted comments
+            document.getElementById('rootca-output').innerHTML = highlightComments(`# Create Root CA configuration
+cat > rootCA.cnf <<EOF
+${rootCAConfig}
+EOF
+
+# Generate Root CA private key (4096-bit RSA)
+openssl genrsa -out rootCA.key 4096
+
+# Generate self-signed Root CA certificate (valid ${rootYears} years)
+openssl req -x509 -new -nodes -key rootCA.key -sha256 -days ${rootDays} \\
+  -out rootCA.crt -config rootCA.cnf -extensions v3_ca
+
+# Verify Root CA
+openssl x509 -in rootCA.crt -noout -text | grep -E "Issuer:|CA:TRUE|Validity"`);
+
+            document.getElementById('intermediate-output').innerHTML = highlightComments(`# Create Intermediate CA configuration
+cat > intermediateCA.cnf <<EOF
+${intermediateCAConfig}
+EOF
+
+# Generate Intermediate CA private key
+openssl genrsa -out intermediateCA.key 4096
+
+# Create CSR for Intermediate CA
+openssl req -new -key intermediateCA.key -out intermediateCA.csr \\
+  -config intermediateCA.cnf
+
+# Sign Intermediate CA with Root CA (valid ${intermediateYears} years)
+openssl x509 -req -days ${intermediateDays} -in intermediateCA.csr \\
+  -CA rootCA.crt -CAkey rootCA.key -CAcreateserial \\
+  -out intermediateCA.crt -extfile intermediateCA.cnf -extensions v3_ca
+
+# Verify Intermediate Certificate
+openssl verify -CAfile rootCA.crt intermediateCA.crt`);
+
+            document.getElementById('wildcard-output').innerHTML = highlightComments(`# Create Wildcard certificate config
+cat > wildcard.cnf <<EOF
+${wildcardConfig}
+EOF
+
+# Generate private key for Wildcard certificate
+openssl genrsa -out wildcard.${domain}.key 2048
+
+# Generate CSR for Wildcard certificate
+openssl req -new -key wildcard.${domain}.key -out wildcard.${domain}.csr \\
+  -config wildcard.cnf
+
+# Sign Wildcard certificate (valid ${wildcardYears} year${wildcardYears !== 1 ? 's' : ''})
+openssl x509 -req -days ${wildcardDays} -in wildcard.${domain}.csr \\
+  -CA intermediateCA.crt -CAkey intermediateCA.key -CAcreateserial \\
+  -out wildcard.${domain}.crt -extfile wildcard.cnf -extensions v3_req
+
+# Verify Wildcard Certificate
+openssl verify -CAfile rootCA.crt -untrusted intermediateCA.crt wildcard.${domain}.crt`);
+
+            document.getElementById('fullchain-output').innerHTML = highlightComments(`# Create full chain bundle
+cat wildcard.${domain}.crt intermediateCA.crt rootCA.crt > wildcard.${domain}.fullchain.crt
+
+# Verify full chain
+openssl verify -CAfile rootCA.crt wildcard.${domain}.fullchain.crt
+
+# Final files needed for deployment:
+# - wildcard.${domain}.key          (private key)
+# - wildcard.${domain}.fullchain.crt  (certificate chain)
+# - rootCA.crt                     (root certificate for trust store)
+
+# Optional: Create PFX/PKCS12 bundle
+openssl pkcs12 -export -out wildcard.${domain}.pfx \\
+  -inkey wildcard.${domain}.key \\
+  -in wildcard.${domain}.fullchain.crt \\
+  -password pass:your_password`);
+        }
+    </script>
+<script src="https://cdn.jsdelivr.net/gh/academicgit/badge/badge.js"></script>
+</body>
+</html>
