@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <link rel="shortcut icon" href="https://cdn-icons-png.flaticon.com/512/11861/11861955.png" type="image/x-icon">
@@ -17,6 +18,7 @@
             --success: #22c55e;
             --success-hover: #16a34a;
             --comment: #10b981;
+            --warning: #f59e0b;
         }
 
         [data-theme="light"] {
@@ -41,11 +43,12 @@
             line-height: 1.6;
             transition: background-color 0.3s, color 0.3s;
             min-height: 100vh;
+            padding: 1rem;
         }
 
         .container {
             max-width: 1000px;
-            margin: 2rem auto;
+            margin: 0 auto;
             padding: 2rem;
             background-color: var(--surface);
             border-radius: 1rem;
@@ -97,7 +100,8 @@
             color: var(--text);
         }
 
-        input, select {
+        input,
+        select {
             width: 100%;
             padding: 0.75rem;
             background: var(--background);
@@ -108,7 +112,8 @@
             font-size: 1rem;
         }
 
-        input:focus, select:focus {
+        input:focus,
+        select:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
@@ -126,6 +131,7 @@
             gap: 0.5rem;
             margin: 2rem 0 1rem;
             border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
         }
 
         .tab-btn {
@@ -205,6 +211,7 @@
             cursor: pointer;
             transition: background 0.3s;
             font-size: 1rem;
+            margin-top: 0.5rem;
         }
 
         #generate-btn:hover {
@@ -218,24 +225,30 @@
 
         @media (max-width: 768px) {
             .container {
-                margin: 1rem;
                 padding: 1.5rem;
             }
-            
+
             .validity-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             h1 {
                 font-size: 1.5rem;
+            }
+
+            .tabs {
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
             }
         }
     </style>
 </head>
+
 <body data-theme="dark">
     <div class="container">
         <div class="header">
             <h1>SSLForge✨ OpenSSL Cert Generator🔐</h1>
+            <!-- <h1>🔐 OpenSSL Cert Generator</h1> -->
             <button class="theme-toggle" onclick="toggleTheme()">🌓 Toggle Theme</button>
         </div>
 
@@ -274,12 +287,14 @@
         </div>
 
         <button id="generate-btn">⚡⚙️⚡</button>
+        <!-- <button id="generate-btn">Generate OpenSSL Commands</button> -->
 
         <div class="tabs">
             <button class="tab-btn active" data-tab="rootca">Root CA</button>
             <button class="tab-btn" data-tab="intermediate">Intermediate</button>
             <button class="tab-btn" data-tab="wildcard">Wildcard</button>
             <button class="tab-btn" data-tab="fullchain">Full Chain</button>
+            <button class="tab-btn" data-tab="install">Installation</button>
         </div>
 
         <div id="rootca" class="tab-content active">
@@ -300,6 +315,11 @@
         <div id="fullchain" class="tab-content">
             <div class="output" id="fullchain-output"></div>
             <button class="copy-btn" data-target="fullchain-output">Copy</button>
+        </div>
+
+        <div id="install" class="tab-content">
+            <div class="output" id="install-output"></div>
+            <button class="copy-btn" data-target="install-output">Copy</button>
         </div>
     </div>
 
@@ -359,8 +379,8 @@
             const highlightComments = (text) => {
                 return text.split('\n').map(line => {
                     const escaped = line.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    return line.startsWith('#') 
-                        ? `<span class="comment">${escaped}</span>` 
+                    return line.startsWith('#')
+                        ? `<span class="comment">${escaped}</span>`
                         : escaped;
                 }).join('\n');
             };
@@ -370,7 +390,7 @@
             const wildcardDays = wildcardYears * 365;
             const wildcardDomain = `*.${domain}`;
 
-            // Configurations
+            // Root CA Config
             const rootCAConfig = `[req]
 distinguished_name = req_distinguished_name
 x509_extensions = v3_ca
@@ -387,6 +407,7 @@ authorityKeyIdentifier = keyid:always,issuer
 basicConstraints = critical, CA:TRUE
 keyUsage = critical, digitalSignature, cRLSign, keyCertSign`;
 
+            // Intermediate CA Config
             const intermediateCAConfig = `[req]
 distinguished_name = req_distinguished_name
 x509_extensions = v3_ca
@@ -403,6 +424,7 @@ authorityKeyIdentifier = keyid:always,issuer
 basicConstraints = critical, CA:TRUE, pathlen:0
 keyUsage = critical, digitalSignature, cRLSign, keyCertSign`;
 
+            // Wildcard Config
             const wildcardConfig = `[req]
 distinguished_name = req_distinguished_name
 req_extensions = v3_req
@@ -419,7 +441,7 @@ keyUsage = digitalSignature, keyEncipherment
 extendedKeyUsage = serverAuth
 basicConstraints = CA:FALSE`;
 
-            // Generate outputs with highlighted comments
+            // Root CA Output
             document.getElementById('rootca-output').innerHTML = highlightComments(`# Create Root CA configuration
 cat > rootCA.cnf <<EOF
 ${rootCAConfig}
@@ -435,6 +457,7 @@ openssl req -x509 -new -nodes -key rootCA.key -sha256 -days ${rootDays} \\
 # Verify Root CA
 openssl x509 -in rootCA.crt -noout -text | grep -E "Issuer:|CA:TRUE|Validity"`);
 
+            // Intermediate Output
             document.getElementById('intermediate-output').innerHTML = highlightComments(`# Create Intermediate CA configuration
 cat > intermediateCA.cnf <<EOF
 ${intermediateCAConfig}
@@ -455,6 +478,7 @@ openssl x509 -req -days ${intermediateDays} -in intermediateCA.csr \\
 # Verify Intermediate Certificate
 openssl verify -CAfile rootCA.crt intermediateCA.crt`);
 
+            // Wildcard Output
             document.getElementById('wildcard-output').innerHTML = highlightComments(`# Create Wildcard certificate config
 cat > wildcard.cnf <<EOF
 ${wildcardConfig}
@@ -475,6 +499,7 @@ openssl x509 -req -days ${wildcardDays} -in wildcard.${domain}.csr \\
 # Verify Wildcard Certificate
 openssl verify -CAfile rootCA.crt -untrusted intermediateCA.crt wildcard.${domain}.crt`);
 
+            // Fullchain Output
             document.getElementById('fullchain-output').innerHTML = highlightComments(`# Create full chain bundle
 cat wildcard.${domain}.crt intermediateCA.crt rootCA.crt > wildcard.${domain}.fullchain.crt
 
@@ -491,8 +516,37 @@ openssl pkcs12 -export -out wildcard.${domain}.pfx \\
   -inkey wildcard.${domain}.key \\
   -in wildcard.${domain}.fullchain.crt \\
   -password pass:your_password`);
+
+            // Netscaler Install Output
+            const domainKey = domain.replace(/\./g, '_');
+            document.getElementById('install-output').innerHTML = highlightComments(`# SSL Certificate Installation Commands (>)
+
+# 1. Upload certificate files to /nsconfig/ssl/
+#    - rootCA.crt
+#    - rootCA.key
+#    - intermediateCA.crt
+#    - intermediateCA.key
+#    - wildcard.${domain}.crt
+#    - wildcard.${domain}.key
+#    - wildcard.${domain}.fullchain.crt
+
+# 2. Install certificates on Netscaler:
+add ssl certKey RootCA_${domainKey} -cert "rootCA.crt" -key "rootCA.key"
+add ssl certKey IntermediateCA_${domainKey} -cert "intermediateCA.crt" -key "intermediateCA.key"
+add ssl certKey Wildcard_${domainKey} -cert "wildcard.${domain}.crt" -key "wildcard.${domain}.key"
+
+# 3. Link certificates in hierarchy:
+link ssl certKey IntermediateCA_${domainKey} RootCA_${domainKey}
+link ssl certKey Wildcard_${domainKey} IntermediateCA_${domainKey}
+
+# 4. Save configuration
+save ns config
+
+# 5. (Optional) Bind to virtual server:
+# add ssl vserver <your_vserver_name> -certkeyName Wildcard_${domainKey}`);
         }
     </script>
-<script src="https://cdn.jsdelivr.net/gh/academicgit/badge/badge.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/academicgit/badge/badge.js"></script>
 </body>
+
 </html>
