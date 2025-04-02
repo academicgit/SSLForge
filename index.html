@@ -521,7 +521,7 @@ openssl pkcs12 -export -out wildcard.${domain}.pfx \\
             const domainKey = domain.replace(/\./g, '_');
             document.getElementById('install-output').innerHTML = highlightComments(`# SSL Certificate Installation Commands (>)
 
-# 1. Upload certificate files to /nsconfig/ssl/
+# 1. Upload certificate files
 #    - rootCA.crt
 #    - rootCA.key
 #    - intermediateCA.crt
