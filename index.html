@@ -517,7 +517,7 @@ openssl pkcs12 -export -out wildcard.${domain}.pfx \\
   -in wildcard.${domain}.fullchain.crt \\
   -password pass:your_password`);
 
-            // Netscaler Install Output
+            // Install Output
             const domainKey = domain.replace(/\./g, '_');
             document.getElementById('install-output').innerHTML = highlightComments(`# SSL Certificate Installation Commands (>)
 
@@ -530,7 +530,7 @@ openssl pkcs12 -export -out wildcard.${domain}.pfx \\
 #    - wildcard.${domain}.key
 #    - wildcard.${domain}.fullchain.crt
 
-# 2. Install certificates on Netscaler:
+# 2. Install certificates on Machine:
 add ssl certKey RootCA_${domainKey} -cert "rootCA.crt" -key "rootCA.key"
 add ssl certKey IntermediateCA_${domainKey} -cert "intermediateCA.crt" -key "intermediateCA.key"
 add ssl certKey Wildcard_${domainKey} -cert "wildcard.${domain}.crt" -key "wildcard.${domain}.key"
